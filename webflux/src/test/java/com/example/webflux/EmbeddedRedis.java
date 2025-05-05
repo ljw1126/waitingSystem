@@ -1,18 +1,18 @@
-package com.example.webflux.repository;
+package com.example.webflux;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import java.io.IOException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.TestConfiguration;
 import redis.embedded.RedisServer;
-
-import java.io.IOException;
 
 @TestConfiguration
 public class EmbeddedRedis {
     private final RedisServer redisServer;
 
-    public EmbeddedRedis() throws IOException {
-        this.redisServer = new RedisServer(6379);
+    public EmbeddedRedis(@Value("${spring.data.redis.port}") int port) throws IOException {
+        this.redisServer = new RedisServer(port);
     }
 
     @PostConstruct
