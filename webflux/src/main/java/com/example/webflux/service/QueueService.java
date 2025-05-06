@@ -15,7 +15,7 @@ import reactor.core.publisher.Mono;
 public class QueueService {
     private final RedisRepository redisRepository;
 
-    public Mono<Long> enqueueWaitingQueue(final Long userId) {
+    public Mono<Long> enqueueWaitingQueue(Long userId) {
         long unixTimestamp = Instant.now().getEpochSecond();
         String queue = WAITING_QUEUE.getKey();
         return redisRepository.addZSet(queue, userId, unixTimestamp)
@@ -35,5 +35,14 @@ public class QueueService {
         return redisRepository.zRank(PROCEED_QUEUE.getKey(), userId)
                 .defaultIfEmpty(-1L)
                 .map(rank -> rank >= 0);
+    }
+
+    public Mono<Long> checked(Long userId) {
+        return isAllowed(userId)
+                .filter(Boolean::booleanValue)
+                .flatMap(allowed -> Mono.just(0L))
+                .switchIfEmpty(enqueueWaitingQueue(userId)
+                                .onErrorResume(ex -> redisRepository.zRank(WAITING_QUEUE.getKey(), userId).map(i -> i >= 0 ? i + 1 : i))
+                );
     }
 }

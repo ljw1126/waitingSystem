@@ -104,4 +104,41 @@ class QueueServiceTest {
                 .expectNext(true)
                 .verifyComplete();
     }
+
+    @DisplayName("허용된 유저이면 순위 0을 반환한다")
+    @Test
+    void checked() {
+        Long userId = 100L;
+
+        StepVerifier.create(queueService.enqueueWaitingQueue(100L)
+                .then(queueService.allow(1L))
+                .then(queueService.checked(userId))
+        ).expectNext(0L)
+        .verifyComplete();
+    }
+
+    @DisplayName("대기열에도 없는 유저인 경우 대기열에 추가된 후 순위 랭킹을 반환한다")
+    @Test
+    void checkedWhenEmptyUserId() {
+        Long userId = 102L;
+
+        StepVerifier.create(queueService.enqueueWaitingQueue(100L)
+                        .then(queueService.enqueueWaitingQueue(101L))
+                        .then(queueService.checked(userId))
+                ).expectNext(3L)
+                .verifyComplete();
+    }
+
+    @DisplayName("대기열에 있는 유저의 경우 대기열 순위 랭킹을 반환한다")
+    @Test
+    void checkedWhenExistWaitingQueue() {
+        Long userId = 102L;
+
+        StepVerifier.create(queueService.enqueueWaitingQueue(100L)
+                        .then(queueService.enqueueWaitingQueue(101L))
+                        .then(queueService.enqueueWaitingQueue(userId))
+                        .then(queueService.checked(userId))
+                ).expectNext(3L)
+                .verifyComplete();
+    }
 }
