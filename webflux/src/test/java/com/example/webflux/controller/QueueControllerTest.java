@@ -19,7 +19,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
 @WebFluxTest(QueueController.class)
-class QueueQueueControllerTest {
+class QueueControllerTest {
 
     @Autowired
     private WebTestClient webTestClient;

@@ -5,8 +5,10 @@ import com.example.webflux.service.QueueManager;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAmount;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -109,6 +111,31 @@ public class RedisRepositoryTest {
                 .expectNextMatches(tuple -> tuple.getValue().equalsIgnoreCase("1"))
                 .expectNextMatches(tuple -> tuple.getValue().equalsIgnoreCase("2"))
                 .expectNextMatches(tuple -> tuple.getValue().equalsIgnoreCase("3"))
+                .verifyComplete();
+    }
+
+    @Test
+    void scanWhenEmpty() {
+        String pattern = "wait:*";
+        Long count = 100L;
+
+        StepVerifier.create(redisRepository.scan(pattern, count).collectList())
+                .expectNextMatches(List::isEmpty)
+                .verifyComplete();
+    }
+
+    @Test
+    void scanWhenExistQueueData() {
+        String queue = QueueManager.WAITING_QUEUE.getKey();
+        String pattern = "wait:*";
+        Long count = 100L;
+
+        Mono<Boolean> setup = redisRepository.addZSetIfAbsent(queue, 1L, 100L)
+                .then(redisRepository.addZSetIfAbsent(queue, 2L, 101L))
+                .then(redisRepository.addZSetIfAbsent(queue, 3L, 103L));
+
+        StepVerifier.create(setup.thenMany(redisRepository.scan(pattern, count).collectList()))
+                .expectNextMatches(list -> list.contains(queue)) // wait:queue
                 .verifyComplete();
     }
 }
