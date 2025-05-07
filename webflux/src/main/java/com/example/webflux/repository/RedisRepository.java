@@ -5,7 +5,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface RedisRepository {
-    Mono<Boolean> addZSet(String queue, Long userId, Long timestamp);
+    Mono<Boolean> addZSetIfAbsent(String queue, Long userId, Long timestamp);
 
     Mono<Long> zRank(String queue, Long userId);
 

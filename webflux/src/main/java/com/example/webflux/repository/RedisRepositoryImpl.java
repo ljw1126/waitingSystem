@@ -1,6 +1,9 @@
 package com.example.webflux.repository;
 
+import java.nio.ByteBuffer;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.connection.ReactiveZSetCommands;
+import org.springframework.data.redis.connection.zset.Tuple;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Repository;
@@ -13,9 +16,16 @@ public class RedisRepositoryImpl implements RedisRepository {
     private final ReactiveRedisTemplate<String, String> reactiveRedisTemplate;
 
     @Override
-    public Mono<Boolean> addZSet(String queue, Long userId, Long timestamp) {
-        return reactiveRedisTemplate.opsForZSet()
-                .add(queue, userId.toString(), timestamp);
+    public Mono<Boolean> addZSetIfAbsent(String queue, Long userId, Long timestamp) {
+        ReactiveZSetCommands.ZAddCommand zAddCommand = ReactiveZSetCommands.ZAddCommand.tuple(Tuple.of(userId.toString().getBytes(), timestamp.doubleValue()))
+                .nx().to(ByteBuffer.wrap(queue.getBytes()));
+
+        return reactiveRedisTemplate.getConnectionFactory()
+                .getReactiveConnection()
+                .zSetCommands()
+                .zAdd(Mono.just(zAddCommand))
+                .next()
+                .map(response -> response.getOutput() != null && response.getOutput().intValue() == 1);
     }
 
     @Override
