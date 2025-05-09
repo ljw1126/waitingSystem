@@ -1,18 +1,26 @@
 package com.example.webflux.controller;
 
+import static com.example.webflux.service.QueueManager.*;
+
+import com.example.common.AllowedResponse;
 import com.example.common.QueueStatusResponse;
 import com.example.webflux.controller.dto.AllowResultResponse;
-import com.example.webflux.controller.dto.AllowedResponse;
+import com.example.webflux.controller.dto.RankNumberResponse;
 import com.example.webflux.controller.dto.WaitingQueueResponse;
 import com.example.webflux.service.QueueService;
+import java.time.Duration;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseCookie;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
@@ -31,15 +39,37 @@ public class QueueController {
             .map(allowedCount -> new AllowResultResponse(count, allowedCount));
     }
 
-    @GetMapping("/proceed/queue/allowed")
-    public Mono<AllowedResponse> isAllowed(@RequestParam("userId") Long userId) {
-        return queueService.isAllowed(userId)
+    @GetMapping("/queue/allowed")
+    public Mono<AllowedResponse> isAllowed(@RequestParam("userId") Long userId, @RequestParam("token") String token) {
+        return queueService.isAllowedByToken(userId, token)
                 .map(AllowedResponse::new);
     }
 
-    @GetMapping("/queue/checked")
+    @GetMapping("/waiting/queue/rank")
+    public Mono<RankNumberResponse> rank(@RequestParam("userId") Long userId) {
+        return queueService.rank(WAITING_QUEUE.getKey(), userId)
+                .map(RankNumberResponse::new);
+    }
+
+    @GetMapping("/waiting/queue/checked")
     public Mono<QueueStatusResponse> checked(@RequestParam("userId") Long userId) {
         return queueService.checked(userId)
                 .map(rank -> new QueueStatusResponse(rank == 0, rank));
+    }
+
+    private static final String USER_QUEUE_TOKEN = "user-queue-token";
+
+    @GetMapping("/touch")
+    public Mono<String> touch(@RequestParam("userId") Long userId, ServerWebExchange exchange) {
+        log.info("touch : {}", userId);
+
+        return Mono.defer(() -> queueService.generateToken(userId))
+            .map(token -> {
+                  exchange.getResponse().addCookie(ResponseCookie.from(USER_QUEUE_TOKEN, token)
+                          .maxAge(Duration.ofSeconds(300))
+                          .path("/")
+                          .build());
+                  return token;
+                });
     }
 }

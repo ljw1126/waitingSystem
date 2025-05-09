@@ -4,6 +4,9 @@ import static com.example.webflux.exception.QueueErrorCode.*;
 import static com.example.webflux.service.QueueManager.*;
 
 import com.example.webflux.repository.RedisRepository;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +35,7 @@ public class QueueService {
         return redisRepository.addZSetIfAbsent(queue, userId, unixTimestamp)
                 .filter(i -> i)
                 .switchIfEmpty(Mono.error(ALREADY_RESISTER_USER.build()))
-                .flatMap(i -> redisRepository.zRank(queue, userId))
-                .map(i -> i >= 0 ? i + 1 : i);
+                .flatMap(i -> rank(queue, userId));
     }
 
     public Mono<Long> allow(Long count) {
@@ -48,19 +50,22 @@ public class QueueService {
                 .count();
     }
 
-    public Mono<Boolean> isAllowed(Long userId) {
-        return redisRepository.zRank(PROCEED_QUEUE.getKey(), userId)
-                .defaultIfEmpty(-1L)
-                .map(rank -> rank >= 0);
+    public Mono<Boolean> isAllowedByToken(Long userId, String token) {
+        return this.generateToken(userId)
+                .filter(other -> other.equalsIgnoreCase(token))
+                .map(i -> true)
+                .defaultIfEmpty(false);
     }
 
     public Mono<Long> checked(Long userId) {
-        return isAllowed(userId)
-                .filter(Boolean::booleanValue)
-                .flatMap(allowed -> Mono.just(0L))
-                .switchIfEmpty(enqueueWaitingQueue(userId)
-                                .onErrorResume(ex -> redisRepository.zRank(WAITING_QUEUE.getKey(), userId).map(i -> i >= 0 ? i + 1 : i))
-                );
+        return enqueueWaitingQueue(userId)
+                .onErrorResume(e -> rank(WAITING_QUEUE.getKey(), userId));
+    }
+
+    public Mono<Long> rank(String queue, Long userId) {
+        return redisRepository.zRank(queue, userId)
+                .defaultIfEmpty(-1L)
+                .map(rank -> rank >= 0 ? rank + 1 : rank);
     }
 
     @Scheduled(initialDelay = 5000, fixedDelay = 10000)
@@ -76,4 +81,21 @@ public class QueueService {
                 .doOnNext(tuple -> log.info("Tried %d and allowed %d members of %s queue".formatted(maxAllUserCount, tuple.getScore().longValue(), new String(tuple.getValue()))))
                 .subscribe();
     }
+
+    public Mono<String> generateToken(Long userId) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            String input = "user-queue-%d".formatted(userId);
+            byte[] encodedHash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+
+            StringBuilder hexString = new StringBuilder();
+            for(byte aByte : encodedHash) {
+                hexString.append(String.format("%02x", aByte));
+            }
+            return Mono.just(hexString.toString());
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

@@ -10,7 +10,8 @@ spring:
       host: localhost
 server:
   port: 9090
+  address: 0.0.0.0
 
 scheduler:
   enabled: true
-  max-allow-user-count: 3
+  max-allow-user-count: 1000

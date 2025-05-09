@@ -4,9 +4,10 @@ import static com.example.webflux.exception.QueueErrorCode.ALREADY_RESISTER_USER
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.example.common.AllowedResponse;
 import com.example.webflux.config.ServerExceptionResponse;
 import com.example.webflux.controller.dto.AllowResultResponse;
-import com.example.webflux.controller.dto.AllowedResponse;
+import com.example.webflux.controller.dto.RankNumberResponse;
 import com.example.webflux.controller.dto.WaitingQueueResponse;
 import com.example.webflux.service.QueueService;
 import org.junit.jupiter.api.DisplayName;
@@ -91,16 +92,63 @@ class QueueControllerTest {
     @Test
     void isAllowed() {
         Long userId = 100L;
+        String token = "2d5d9b49e5991835ad5080d8d68ad34f43edd862df267bc2fa82bba5eb31135f";
 
-        when(queueService.isAllowed(userId))
+        when(queueService.isAllowedByToken(userId, token))
                 .thenReturn(Mono.just(true));
 
         webTestClient.get()
-                .uri("/api/v1/proceed/queue/allowed?userId=" + userId)
+                .uri(uriBuilder -> {
+                    return uriBuilder.path("/api/v1/queue/allowed")
+                            .queryParam("userId", userId)
+                            .queryParam("token", token)
+                            .build();
+                })
                 .exchange()
                 .expectStatus()
                 .is2xxSuccessful()
                 .expectBody(AllowedResponse.class)
-                .value(response -> assertThat(response.isAllowed()).isTrue());
+                .value(response -> assertThat(response.allowed()).isTrue());
+    }
+
+    @DisplayName("대기열 큐에서 유저의 순위를 응답한다")
+    @Test
+    void rank() {
+        Long userId = 100L;
+        Long rank = 2L;
+
+        when(queueService.rank(anyString(), anyLong()))
+                .thenReturn(Mono.just(rank));
+
+        webTestClient.get()
+                .uri("/api/v1/waiting/queue/rank?userId=" + userId)
+                .exchange()
+                .expectStatus()
+                .is2xxSuccessful()
+                .expectBody(RankNumberResponse.class)
+                .value(response -> {
+                    assertThat(response.rank()).isEqualTo(rank);
+                });
+    }
+
+    @DisplayName("허용된 사용자 아이디로 토큰 생성하여 응답한다")
+    @Test
+    void touch() {
+        Long userId = 100L;
+        String token = "2d5d9b49e5991835ad5080d8d68ad34f43edd862df267bc2fa82bba5eb31135f";
+
+        when(queueService.generateToken(userId))
+                .thenReturn(Mono.just(token));
+
+        webTestClient.get()
+                .uri("/api/v1/touch?userId=" + userId)
+                .exchange()
+                .expectStatus()
+                .is2xxSuccessful()
+                .expectCookie()
+                .value("user-queue-token", s -> {
+                    assertThat(s.equalsIgnoreCase(token)).isTrue();
+                });
+
     }
 }

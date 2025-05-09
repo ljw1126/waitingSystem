@@ -51,7 +51,7 @@ public class RedisRepositoryTest {
                 .verifyComplete();
     }
 
-    // 같은 nx 옵션 없이 같은 key, value로 넣을 경우 score가 갱신되는 이슈가 있었다.
+    @DisplayName("대기열 큐에 등록된 사용자의 경우 false를 반환한다")
     @Test
     void addZSetWhenDuplicated() {
         Long userId = 1L;
@@ -136,6 +136,18 @@ public class RedisRepositoryTest {
 
         StepVerifier.create(setup.thenMany(redisRepository.scan(pattern, count).collectList()))
                 .expectNextMatches(list -> list.contains(queue)) // wait:queue
+                .verifyComplete();
+    }
+
+    @Test
+    void luaScript() {
+        String queue = QueueManager.WAITING_QUEUE.getKey();
+
+        StepVerifier.create(redisRepository.addZSetIfAbsentAndRank(queue, 1L, 100L)
+                .then(redisRepository.addZSetIfAbsentAndRank(queue, 2L, 102L))
+                .then(redisRepository.addZSetIfAbsentAndRank(queue, 3L, 102L))
+                .then(redisRepository.addZSetIfAbsentAndRank(queue, 4L, 103L)))
+                .expectNext(3L)
                 .verifyComplete();
     }
 }

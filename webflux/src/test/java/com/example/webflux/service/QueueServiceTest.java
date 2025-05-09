@@ -75,49 +75,27 @@ class QueueServiceTest {
                 .verifyComplete();
     }
 
-    @DisplayName("허용된 유저가 아니면 false를 반환한다")
     @Test
-    void isNotAllowed() {
-        StepVerifier.create(queueService.isAllowed(99L))
-                .expectNext(false)
-                .verifyComplete();
-    }
-
-    @DisplayName("대기열 큐에서 허용된 후 다른 아이디로 허용 여부 확인하면 false 반환한다")
-    @Test
-    void isAllowedOtherUserId() {
-        StepVerifier.create(queueService.enqueueWaitingQueue(100L)
-                        .then(queueService.allow(3L))
-                        .then(queueService.isAllowed(101L)))
-                .expectNext(false)
-                .verifyComplete();
-    }
-
-    @DisplayName("대기열 큐에서 허용된 아이디로 여부 확인하면 true 반환한다")
-    @Test
-    void isAllowed() {
+    void isNotAllowedByToken() {
         Long userId = 100L;
+        String token = "empty";
 
-        StepVerifier.create(queueService.enqueueWaitingQueue(userId)
-                        .then(queueService.allow(3L))
-                        .then(queueService.isAllowed(userId)))
+        StepVerifier.create(queueService.isAllowedByToken(userId, token))
+                .expectNext(false)
+                .verifyComplete();
+    }
+
+    @Test
+    void isAllowedByToken() {
+        Long userId = 100L;
+        String token = "2d5d9b49e5991835ad5080d8d68ad34f43edd862df267bc2fa82bba5eb31135f";
+
+        StepVerifier.create(queueService.isAllowedByToken(userId, token))
                 .expectNext(true)
                 .verifyComplete();
     }
 
-    @DisplayName("허용된 유저이면 순위 0을 반환한다")
-    @Test
-    void checked() {
-        Long userId = 100L;
-
-        StepVerifier.create(queueService.enqueueWaitingQueue(100L)
-                .then(queueService.allow(1L))
-                .then(queueService.checked(userId))
-        ).expectNext(0L)
-        .verifyComplete();
-    }
-
-    @DisplayName("대기열에도 없는 유저인 경우 대기열에 추가된 후 순위 랭킹을 반환한다")
+    @DisplayName("대기열에 없는 유저인 경우 대기열에 추가된 후 순위 랭킹을 반환한다")
     @Test
     void checkedWhenEmptyUserId() {
         Long userId = 102L;
@@ -139,6 +117,40 @@ class QueueServiceTest {
                         .then(queueService.enqueueWaitingQueue(userId))
                         .then(queueService.checked(userId))
                 ).expectNext(3L)
+                .verifyComplete();
+    }
+
+    @Test
+    void generateToken() {
+        Long userId = 100L;
+
+        StepVerifier.create(queueService.generateToken(userId))
+                .expectNext("2d5d9b49e5991835ad5080d8d68ad34f43edd862df267bc2fa82bba5eb31135f")
+                .verifyComplete();
+    }
+
+    @DisplayName("대기열에 없는 유저의 경우 -1을 반환한다")
+    @Test
+    void rankWhenNoneRegisterUserId() {
+        String queue = QueueManager.WAITING_QUEUE.getKey();
+        Long userId = 99L;
+
+        StepVerifier.create(queueService.rank(queue, userId))
+                .expectNext(-1L)
+                .verifyComplete();
+    }
+
+    @DisplayName("대기열에 등록된 유저의 경우 순위를 반환한다")
+    @Test
+    void rank() {
+        String queue = QueueManager.WAITING_QUEUE.getKey();
+        Long userId = 101L;
+
+        StepVerifier.create(queueService.enqueueWaitingQueue(100L)
+                        .then(queueService.enqueueWaitingQueue(userId))
+                        .then(queueService.enqueueWaitingQueue(102L))
+                        .then(queueService.rank(queue, userId)))
+                .expectNext(2L)
                 .verifyComplete();
     }
 }
