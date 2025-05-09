@@ -3,12 +3,18 @@ package com.example.webflux.repository;
 import com.example.webflux.EmbeddedRedis;
 import com.example.webflux.service.QueueManager;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.temporal.TemporalAmount;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.connection.ReactiveRedisConnection;
+import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.test.context.ActiveProfiles;
@@ -40,22 +46,22 @@ public class RedisRepositoryTest {
         long timestamp = Instant.now().getEpochSecond();
         String queue = QueueManager.WAITING_QUEUE.getKey();
 
-        StepVerifier.create(redisRepository.addZSet(queue, userId, timestamp))
+        StepVerifier.create(redisRepository.addZSetIfAbsent(queue, userId, timestamp))
                 .expectNext(true)
                 .verifyComplete();
     }
 
+    // 같은 nx 옵션 없이 같은 key, value로 넣을 경우 score가 갱신되는 이슈가 있었다.
     @Test
     void addZSetWhenDuplicated() {
         Long userId = 1L;
-        long timestamp = Instant.now().getEpochSecond();
         String queue = QueueManager.WAITING_QUEUE.getKey();
 
-        StepVerifier.create(redisRepository.addZSet(queue, userId, timestamp))
+        StepVerifier.create(redisRepository.addZSetIfAbsent(queue, userId, Instant.now().getEpochSecond()))
                 .expectNext(true)
                 .verifyComplete();
 
-        StepVerifier.create(redisRepository.addZSet(queue, userId, timestamp))
+        StepVerifier.create(redisRepository.addZSetIfAbsent(queue, userId, Instant.now().getEpochSecond()))
                 .expectNext(false)
                 .verifyComplete();
     }
@@ -65,7 +71,7 @@ public class RedisRepositoryTest {
     void zRank() {
         String queue = QueueManager.WAITING_QUEUE.getKey();
 
-        StepVerifier.create(redisRepository.addZSet(queue,1L, 100L)
+        StepVerifier.create(redisRepository.addZSetIfAbsent(queue,1L, 100L)
                 .then(redisRepository.zRank(queue,1L)))
                 .expectNext(0L)
                 .verifyComplete();
@@ -75,8 +81,8 @@ public class RedisRepositoryTest {
     void zRankByMultiUser() {
         String queue = QueueManager.WAITING_QUEUE.getKey();
 
-        StepVerifier.create(redisRepository.addZSet( queue,1L, 100L)
-                .then(redisRepository.addZSet(queue,2L, 99L))
+        StepVerifier.create(redisRepository.addZSetIfAbsent( queue,1L, 100L)
+                .then(redisRepository.addZSetIfAbsent(queue,2L, 99L))
                 .then(redisRepository.zRank( queue,2L)))
                 .expectNext(0L)
                 .verifyComplete();
@@ -95,9 +101,9 @@ public class RedisRepositoryTest {
     void popMin() {
         String queue = QueueManager.WAITING_QUEUE.getKey();
 
-        Mono<Boolean> setup = redisRepository.addZSet(queue, 1L, 100L)
-                .then(redisRepository.addZSet(queue, 2L, 101L))
-                .then(redisRepository.addZSet(queue, 3L, 103L));
+        Mono<Boolean> setup = redisRepository.addZSetIfAbsent(queue, 1L, 100L)
+                .then(redisRepository.addZSetIfAbsent(queue, 2L, 101L))
+                .then(redisRepository.addZSetIfAbsent(queue, 3L, 103L));
 
         Flux<ZSetOperations.TypedTuple<String>> result = setup.thenMany(redisRepository.popMin(queue, 4L)); // Mono -> Flux
 
@@ -105,6 +111,31 @@ public class RedisRepositoryTest {
                 .expectNextMatches(tuple -> tuple.getValue().equalsIgnoreCase("1"))
                 .expectNextMatches(tuple -> tuple.getValue().equalsIgnoreCase("2"))
                 .expectNextMatches(tuple -> tuple.getValue().equalsIgnoreCase("3"))
+                .verifyComplete();
+    }
+
+    @Test
+    void scanWhenEmpty() {
+        String pattern = "wait:*";
+        Long count = 100L;
+
+        StepVerifier.create(redisRepository.scan(pattern, count).collectList())
+                .expectNextMatches(List::isEmpty)
+                .verifyComplete();
+    }
+
+    @Test
+    void scanWhenExistQueueData() {
+        String queue = QueueManager.WAITING_QUEUE.getKey();
+        String pattern = "wait:*";
+        Long count = 100L;
+
+        Mono<Boolean> setup = redisRepository.addZSetIfAbsent(queue, 1L, 100L)
+                .then(redisRepository.addZSetIfAbsent(queue, 2L, 101L))
+                .then(redisRepository.addZSetIfAbsent(queue, 3L, 103L));
+
+        StepVerifier.create(setup.thenMany(redisRepository.scan(pattern, count).collectList()))
+                .expectNextMatches(list -> list.contains(queue)) // wait:queue
                 .verifyComplete();
     }
 }
