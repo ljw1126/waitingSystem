@@ -3,10 +3,7 @@ package com.example.webflux.repository;
 import com.example.webflux.EmbeddedRedis;
 import com.example.webflux.service.QueueManager;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.temporal.TemporalAmount;
 import java.util.List;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.connection.ReactiveRedisConnection;
-import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.test.context.ActiveProfiles;
@@ -25,7 +21,7 @@ import reactor.test.StepVerifier;
 @SpringBootTest
 @Import(EmbeddedRedis.class)
 @ActiveProfiles("test")
-public class RedisRepositoryTest {
+class RedisRepositoryTest {
 
     @Autowired
     private ReactiveRedisTemplate<String, String> reactiveRedisTemplate;

@@ -1,5 +1,7 @@
 package com.example.webflux.service;
 
+import static com.example.webflux.service.QueueManager.*;
+
 import com.example.webflux.EmbeddedRedis;
 import com.example.webflux.exception.WaitingQueueException;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,6 +77,23 @@ class QueueServiceTest {
                 .verifyComplete();
     }
 
+    @DisplayName("대기열 유저를 처리한 개수를 반환한다")
+    @Test
+    void allowUserByCount() {
+        String queue = WAITING_QUEUE.getKey();
+        Long count = 100L;
+
+        Mono<Long> setup = queueService.enqueueWaitingQueue(1L)
+                .then(queueService.enqueueWaitingQueue(2L))
+                .then(queueService.enqueueWaitingQueue(3L))
+                .then(queueService.enqueueWaitingQueue(4L))
+                .then(queueService.enqueueWaitingQueue(5L));
+
+        StepVerifier.create(setup.then(queueService.allow(queue, count)))
+                .expectNext(5L)
+                .verifyComplete();
+    }
+
     @Test
     void isNotAllowedByToken() {
         Long userId = 100L;
@@ -132,7 +151,7 @@ class QueueServiceTest {
     @DisplayName("대기열에 없는 유저의 경우 -1을 반환한다")
     @Test
     void rankWhenNoneRegisterUserId() {
-        String queue = QueueManager.WAITING_QUEUE.getKey();
+        String queue = WAITING_QUEUE.getKey();
         Long userId = 99L;
 
         StepVerifier.create(queueService.rank(queue, userId))
@@ -143,7 +162,7 @@ class QueueServiceTest {
     @DisplayName("대기열에 등록된 유저의 경우 순위를 반환한다")
     @Test
     void rank() {
-        String queue = QueueManager.WAITING_QUEUE.getKey();
+        String queue = WAITING_QUEUE.getKey();
         Long userId = 101L;
 
         StepVerifier.create(queueService.enqueueWaitingQueue(100L)

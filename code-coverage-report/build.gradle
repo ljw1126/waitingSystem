@@ -1,0 +1,24 @@
+plugins {
+    id 'jacoco-report-aggregation'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    jacocoAggregation(project(":webflux"))
+    jacocoAggregation(project(":website"))
+}
+
+jar {
+    enabled = true
+}
+
+testCodeCoverageReport {
+    afterEvaluate {
+        getClassDirectories().setFrom(classDirectories.files.collect {
+            fileTree(dir: it, exclude: ["**/dto/*", "**/config/*", "**/exception/*", '**/*Application*'])
+        })
+    }
+}

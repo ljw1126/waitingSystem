@@ -3,3 +3,4 @@ rootProject.name = 'waitingSystem'
 include('website')
 include('common')
 include('webflux')
+include('code-coverage-report')
