@@ -34,7 +34,13 @@ public class HomeController {
 
     private String getToken(HttpServletRequest request) {
         final String COOKIE_NAME = "user-queue-token";
-        Optional<Cookie> cookie = Arrays.stream(request.getCookies()).filter(i -> i.getName().equalsIgnoreCase(COOKIE_NAME)).findFirst();
+        Cookie[] cookies = request.getCookies();
+
+        if(cookies == null) {
+            return "";
+        }
+
+        Optional<Cookie> cookie = Arrays.stream(cookies).filter(i -> i.getName().equalsIgnoreCase(COOKIE_NAME)).findFirst();
         return cookie.isPresent() ? cookie.get().getValue() : "";
     }
 
