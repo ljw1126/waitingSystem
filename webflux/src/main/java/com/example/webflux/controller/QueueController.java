@@ -51,6 +51,7 @@ public class QueueController {
                 .map(RankNumberResponse::new);
     }
 
+    // TODO. accessible 사용 안함
     @GetMapping("/waiting/queue/checked")
     public Mono<QueueStatusResponse> checked(@RequestParam("userId") Long userId) {
         return queueService.checked(userId)
