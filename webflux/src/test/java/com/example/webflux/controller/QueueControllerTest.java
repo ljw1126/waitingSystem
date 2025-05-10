@@ -146,9 +146,7 @@ class QueueControllerTest {
                 .expectStatus()
                 .is2xxSuccessful()
                 .expectCookie()
-                .value("user-queue-token", s -> {
-                    assertThat(s.equalsIgnoreCase(token)).isTrue();
-                });
+                .value("user-queue-token", s -> assertThat(s).isEqualToIgnoringCase(token));
 
     }
 }

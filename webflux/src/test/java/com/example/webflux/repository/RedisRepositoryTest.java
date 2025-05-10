@@ -21,7 +21,7 @@ import reactor.test.StepVerifier;
 @SpringBootTest
 @Import(EmbeddedRedis.class)
 @ActiveProfiles("test")
-public class RedisRepositoryTest {
+class RedisRepositoryTest {
 
     @Autowired
     private ReactiveRedisTemplate<String, String> reactiveRedisTemplate;
