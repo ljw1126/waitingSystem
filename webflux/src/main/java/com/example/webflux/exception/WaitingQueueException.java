@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 @Getter
 public class WaitingQueueException extends RuntimeException {
-    private HttpStatus httpStatus;
-    private String code;
-    private String reason;
+    private final HttpStatus httpStatus;
+    private final String code;
+    private final String reason;
 }
