@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.example.common.AllowedResponse;
-import com.example.common.QueueStatusResponse;
+import com.example.common.WaitingQueueRankResponse;
 import com.example.website.service.WaitingQueueService;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
@@ -54,7 +54,7 @@ class HomeControllerTest {
         when(waitingQueueService.isAllowUser(TEST_USER_ID, "invalid-token"))
                 .thenReturn(new AllowedResponse(false));
         when(waitingQueueService.accessibleCheck(any()))
-                .thenReturn(new QueueStatusResponse(false, 999L));
+                .thenReturn(new WaitingQueueRankResponse(999L));
 
         mockMvc.perform(get("/index").param("userId", String.valueOf(TEST_USER_ID)).cookie(invalidCookie))
                 .andExpect(status().isOk())
@@ -66,7 +66,7 @@ class HomeControllerTest {
     @Test
     void requestIndexWithoutToken() throws Exception {
         when(waitingQueueService.accessibleCheck(any()))
-                .thenReturn(new QueueStatusResponse(false, 999L));
+                .thenReturn(new WaitingQueueRankResponse(999L));
 
         mockMvc.perform(get("/index").param("userId", String.valueOf(TEST_USER_ID)))
                 .andExpect(status().isOk())

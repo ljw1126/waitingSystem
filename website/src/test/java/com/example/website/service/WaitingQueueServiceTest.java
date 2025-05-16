@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import com.example.common.AllowedResponse;
-import com.example.common.QueueStatusResponse;
+import com.example.common.WaitingQueueRankResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -57,9 +57,8 @@ class WaitingQueueServiceTest {
         when(exchangeFunction.exchange(any(ClientRequest.class)))
                 .thenReturn(Mono.just(clientResponse));
 
-        QueueStatusResponse result = waitingQueueService.accessibleCheck(userId);
+        WaitingQueueRankResponse result = waitingQueueService.accessibleCheck(userId);
 
-        assertThat(result.accessible()).isFalse();
         assertThat(result.rank()).isEqualTo(expectedRank);
     }
 

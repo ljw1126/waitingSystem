@@ -3,7 +3,7 @@ package com.example.webflux.controller;
 import static com.example.webflux.service.QueueManager.*;
 
 import com.example.common.AllowedResponse;
-import com.example.common.QueueStatusResponse;
+import com.example.common.WaitingQueueRankResponse;
 import com.example.webflux.controller.dto.AllowResultResponse;
 import com.example.webflux.controller.dto.RankNumberResponse;
 import com.example.webflux.controller.dto.WaitingQueueResponse;
@@ -51,11 +51,10 @@ public class QueueController {
                 .map(RankNumberResponse::new);
     }
 
-    // TODO. accessible 사용 안함
     @GetMapping("/waiting/queue/checked")
-    public Mono<QueueStatusResponse> checked(@RequestParam("userId") Long userId) {
+    public Mono<WaitingQueueRankResponse> checked(@RequestParam("userId") Long userId) {
         return queueService.checked(userId)
-                .map(rank -> new QueueStatusResponse(rank == 0, rank));
+                .map(WaitingQueueRankResponse::new);
     }
 
     private static final String USER_QUEUE_TOKEN = "user-queue-token";

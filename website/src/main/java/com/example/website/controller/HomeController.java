@@ -1,7 +1,7 @@
 package com.example.website.controller;
 
 import com.example.common.AllowedResponse;
-import com.example.common.QueueStatusResponse;
+import com.example.common.WaitingQueueRankResponse;
 import com.example.website.service.WaitingQueueService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,7 +27,7 @@ public class HomeController {
             return "index";
         }
 
-        QueueStatusResponse response = waitingQueueService.accessibleCheck(userId);
+        WaitingQueueRankResponse response = waitingQueueService.accessibleCheck(userId);
         model.addAttribute("rank", response.rank());
         return "waiting-room";
     }
