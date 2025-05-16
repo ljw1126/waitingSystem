@@ -131,6 +131,23 @@ class QueueControllerTest {
                 });
     }
 
+    @Test
+    void checked() {
+        Long userId = 100L;
+        Long expectedRank = 99L;
+
+        when(queueService.checked(userId))
+                .thenReturn(Mono.just(99L));
+
+        webTestClient.get()
+                .uri("/api/v1/waiting/queue/checked?userId=" + userId)
+                .exchange()
+                .expectStatus()
+                .is2xxSuccessful()
+                .expectBody(WaitingQueueResponse.class)
+                .value(response -> response.getRank().equals(expectedRank));
+    }
+
     @DisplayName("허용된 사용자 아이디로 토큰 생성하여 응답한다")
     @Test
     void touch() {
