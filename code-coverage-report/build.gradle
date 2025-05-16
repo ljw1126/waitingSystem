@@ -9,6 +9,7 @@ repositories {
 dependencies {
     jacocoAggregation(project(":webflux"))
     jacocoAggregation(project(":website"))
+    jacocoAggregation(project(":job-scheduler"))
 }
 
 jar {
@@ -18,7 +19,7 @@ jar {
 testCodeCoverageReport {
     afterEvaluate {
         getClassDirectories().setFrom(classDirectories.files.collect {
-            fileTree(dir: it, exclude: ["**/dto/*", "**/config/*", "**/exception/*", '**/*Application*'])
+            fileTree(dir: it, exclude: ["**/dto/*", "**/config/*", "**/exception/*", '**/*Application*', '**/common/*', '**/Embedded*', '**/*Scheduler*'])
         })
     }
 }

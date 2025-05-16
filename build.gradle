@@ -58,12 +58,6 @@ subprojects {
 			xml.required.set(true)
 			html.required.set(true)
 		}
-
-		afterEvaluate {
-			getClassDirectories().setFrom(classDirectories.files.collect {
-				fileTree(dir: it, exclude: ["**/dto/*", "**/config/*", "**/exception/*", '**/*Application*'])
-			})
-		}
 	}
 
 	bootJar.enabled = false
@@ -80,6 +74,7 @@ sonar {
 		property("sonar.tests", "src/test/java")
 		property("sonar.coverage.jacoco.xmlReportPaths", "${rootProject.projectDir}/code-coverage-report/build/reports/jacoco/test/jacocoTestReport.xml")
 		property("sonar.junit.reportPaths", "build/test-results/test")
+		property("sonar.coverage.exclusions", "**/*Application*.java, **/*Scheduler*.java, **/dto/**, **/config/**, **/exception/**, **/common/**, **/Embedded*.java")
 	}
 }
 
