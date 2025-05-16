@@ -140,11 +140,26 @@ class QueueServiceTest {
     }
 
     @Test
-    void generateToken() {
+    void generateTokenWhenNoneExistUser() {
         Long userId = 100L;
 
         StepVerifier.create(queueService.generateToken(userId))
-                .expectNext("2d5d9b49e5991835ad5080d8d68ad34f43edd862df267bc2fa82bba5eb31135f")
+            .expectErrorMatches(
+                throwable ->
+                    throwable instanceof WaitingQueueException
+                        && ((WaitingQueueException) throwable).getHttpStatus().is4xxClientError())
+            .verify();
+    }
+
+    @Test
+    void successGenerateToken() {
+        Long userId = 100L;
+        String expectedToken = "2d5d9b49e5991835ad5080d8d68ad34f43edd862df267bc2fa82bba5eb31135f";
+
+        StepVerifier.create(queueService.enqueueWaitingQueue(userId)
+                .then(queueService.allow(1L))
+                .then(queueService.generateToken(userId)))
+                .expectNext(expectedToken)
                 .verifyComplete();
     }
 

@@ -7,7 +7,8 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor
 public enum QueueErrorCode {
-    ALREADY_RESISTER_USER(HttpStatus.CONFLICT, "WQ-0001", "Already registered in queue");
+    ALREADY_RESISTER_USER(HttpStatus.CONFLICT, "WQ-0001", "Already registered in queue"),
+    NONE_EXIST_USER(HttpStatus.BAD_REQUEST, "WQ-0002", "None exist in queue");
 
     private final HttpStatus httpStatus;
     private final String code;

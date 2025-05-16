@@ -51,7 +51,7 @@ public class QueueService {
     }
 
     public Mono<Boolean> isAllowedByToken(Long userId, String token) {
-        return this.generateToken(userId)
+        return this.createToken(userId)
                 .filter(other -> other.equalsIgnoreCase(token))
                 .map(i -> true)
                 .defaultIfEmpty(false);
@@ -83,6 +83,13 @@ public class QueueService {
     }
 
     public Mono<String> generateToken(Long userId) {
+        return rank(PROCEED_QUEUE.getKey(), userId)
+                .filter(i -> i >= 0)
+                .switchIfEmpty(Mono.error(NONE_EXIST_USER.build()))
+                .flatMap(i -> createToken(userId));
+    }
+
+    private Mono<String> createToken(Long userId) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             String input = "user-queue-%d".formatted(userId);
