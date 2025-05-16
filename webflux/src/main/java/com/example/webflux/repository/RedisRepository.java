@@ -12,6 +12,4 @@ public interface RedisRepository {
     Flux<ZSetOperations.TypedTuple<String>> popMin(String queue, Long count);
 
     Flux<String> scan(String queue, Long count);
-
-    Mono<Long> addZSetIfAbsentAndRank(String queue, Long userId, Long timestamp);
 }

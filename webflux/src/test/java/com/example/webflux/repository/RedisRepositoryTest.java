@@ -134,16 +134,4 @@ class RedisRepositoryTest {
                 .expectNextMatches(list -> list.contains(queue)) // wait:queue
                 .verifyComplete();
     }
-
-    @Test
-    void luaScript() {
-        String queue = QueueManager.WAITING_QUEUE.getKey();
-
-        StepVerifier.create(redisRepository.addZSetIfAbsentAndRank(queue, 1L, 100L)
-                .then(redisRepository.addZSetIfAbsentAndRank(queue, 2L, 102L))
-                .then(redisRepository.addZSetIfAbsentAndRank(queue, 3L, 102L))
-                .then(redisRepository.addZSetIfAbsentAndRank(queue, 4L, 103L)))
-                .expectNext(3L)
-                .verifyComplete();
-    }
 }
