@@ -1,6 +1,6 @@
 package com.example.webflux.controller;
 
-import static com.example.webflux.service.QueueManager.*;
+import static com.example.common.QueueManager.*;
 
 import com.example.common.AllowedResponse;
 import com.example.common.WaitingQueueRankResponse;

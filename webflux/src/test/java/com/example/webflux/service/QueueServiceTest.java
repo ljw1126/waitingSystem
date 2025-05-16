@@ -1,6 +1,6 @@
 package com.example.webflux.service;
 
-import static com.example.webflux.service.QueueManager.*;
+import static com.example.common.QueueManager.*;
 
 import com.example.webflux.EmbeddedRedis;
 import com.example.webflux.exception.WaitingQueueException;
@@ -74,23 +74,6 @@ class QueueServiceTest {
 
         StepVerifier.create(setup.then(queueService.allow(3L)))
                 .expectNext(3L)
-                .verifyComplete();
-    }
-
-    @DisplayName("대기열 유저를 처리한 개수를 반환한다")
-    @Test
-    void allowUserByCount() {
-        String queue = WAITING_QUEUE.getKey();
-        Long count = 100L;
-
-        Mono<Long> setup = queueService.enqueueWaitingQueue(1L)
-                .then(queueService.enqueueWaitingQueue(2L))
-                .then(queueService.enqueueWaitingQueue(3L))
-                .then(queueService.enqueueWaitingQueue(4L))
-                .then(queueService.enqueueWaitingQueue(5L));
-
-        StepVerifier.create(setup.then(queueService.allow(queue, count)))
-                .expectNext(5L)
                 .verifyComplete();
     }
 

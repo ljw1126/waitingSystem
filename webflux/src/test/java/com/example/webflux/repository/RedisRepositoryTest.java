@@ -1,7 +1,7 @@
 package com.example.webflux.repository;
 
+import com.example.common.QueueManager;
 import com.example.webflux.EmbeddedRedis;
-import com.example.webflux.service.QueueManager;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;

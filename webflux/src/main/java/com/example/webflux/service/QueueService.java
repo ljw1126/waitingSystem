@@ -1,7 +1,7 @@
 package com.example.webflux.service;
 
+import static com.example.common.QueueManager.*;
 import static com.example.webflux.exception.QueueErrorCode.*;
-import static com.example.webflux.service.QueueManager.*;
 
 import com.example.webflux.repository.RedisRepository;
 import java.nio.charset.StandardCharsets;
@@ -12,8 +12,6 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.connection.zset.Tuple;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -44,12 +42,6 @@ public class QueueService {
                 .count();
     }
 
-    public Mono<Long> allow(String queue, Long count) {
-        return redisRepository.popMin(queue, count)
-                .flatMap(member -> redisRepository.addZSetIfAbsent(PROCEED_QUEUE.getKey(), Long.parseLong(Objects.requireNonNull(member.getValue())), Instant.now().getEpochSecond()))
-                .count();
-    }
-
     public Mono<Boolean> isAllowedByToken(Long userId, String token) {
         return this.createToken(userId)
                 .filter(other -> other.equalsIgnoreCase(token))
@@ -66,20 +58,6 @@ public class QueueService {
         return redisRepository.zRank(queue, userId)
                 .defaultIfEmpty(-1L)
                 .map(rank -> rank >= 0 ? rank + 1 : rank);
-    }
-
-    @Scheduled(initialDelay = 5000, fixedDelay = 10000)
-    private void allowWaitingQueueUser() {
-        if(!scheduling) {
-            log.info("passed scheduling...");
-            return;
-        }
-
-        log.info("process scheduling...");
-        redisRepository.scan("wait:*", 100L)
-                .flatMap(queue -> allow(queue, maxAllUserCount).map(allowedCount -> Tuple.of(queue.getBytes(), allowedCount.doubleValue())))
-                .doOnNext(tuple -> log.info("Tried %d and allowed %d members of %s queue".formatted(maxAllUserCount, tuple.getScore().longValue(), new String(tuple.getValue()))))
-                .subscribe();
     }
 
     public Mono<String> generateToken(Long userId) {
