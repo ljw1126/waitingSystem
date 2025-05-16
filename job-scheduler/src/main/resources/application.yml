@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: job-scheduler
+  config:
+    activate:
+      on-profile: local
+  data:
+    redis:
+      port: 6379
+      host: localhost
+server:
+  port: 7070
+
+scheduler:
+  enabled: true
+  max-allow-user-count: 1000

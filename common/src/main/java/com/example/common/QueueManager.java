@@ -1,4 +1,4 @@
-package com.example.webflux.service;
+package com.example.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

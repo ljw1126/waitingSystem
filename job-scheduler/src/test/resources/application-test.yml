@@ -1,0 +1,11 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+  data:
+    redis:
+      host: localhost
+      port: 63790
+scheduler:
+  enabled: false
+  max-allow-user-count: 10
